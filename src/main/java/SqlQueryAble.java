@@ -1,6 +1,6 @@
 import java.util.List;
 
-public interface QueryAble {
+public interface SqlQueryAble {
     List<String> getColumns();
     List<String> getSource();
     List<String> getJoins();
