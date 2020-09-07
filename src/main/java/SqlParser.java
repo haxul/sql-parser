@@ -40,7 +40,7 @@ public class SqlParser implements QueryAble {
 
     @Override
     public List<String> getSource() {
-        String regex = "(?i)(?<=from)\\s+[A-Za-z0-9.,*\\s()_]+" +
+        String regex = "(?i)(?<=from)\\s+[A-Za-z0-9.,*\\s()_]+?" +
                 "(?=(LEFT|RIGHT|FULL|JOIN|WHERE|OFFSET|LIMIT|;|GROUP BY|ORDER BY|\\(\\s*select.*\\)))";
         Pattern pattern = Pattern.compile(regex);
         Matcher matcher = pattern.matcher(sqlQuery);

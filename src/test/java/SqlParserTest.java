@@ -9,32 +9,24 @@ public class SqlParserTest {
 
     @Test
     public void testSelect() {
-        SqlParser sqlParser = SqlParser.create("  selEct     *  fRom testtable ; ");
-        assertEquals("*", sqlParser.getColumns().get(0));
-
-        String[] expected = {"author.name", "count(book.id)", "sum(book.cost)"};
-        SqlParser parser = SqlParser.create(" SELECT author.name, count(book.id), sum(book.cost) FRoM author ;");
-        assertArrayEquals(expected, parser.getColumns().toArray());
-
-        SqlParser pars = SqlParser.create(" select    author.name    as   name, * from test ;");
-        String[] required = new String[] {"author.name as name", "*"} ;
-
-        assertArrayEquals(required, pars.getColumns().toArray());
-
-        SqlParser anotherParser = SqlParser.create(" select  'test string '  ;");
-        assertThrows(SqlParserException.class, anotherParser::getColumns);
-
-        SqlParser testParser = SqlParser.create(" 'test string ' from  ;");
-        assertThrows(SqlParserException.class, testParser::getColumns);
-
-        SqlParser Parser = SqlParser.create(" select field.name, , * from testtable;");
-        assertThrows(SqlParserException.class, Parser::getColumns);
+        assertEquals("*", SqlParser.create("  selEct     *  fRom testtable ; ").getColumns().get(0));
+        assertArrayEquals(new String[]{"author.name", "count(book.id)", "sum(book.cost)"}, SqlParser.create(" SELECT author.name, count(book.id), sum(book.cost) FRoM author ;").getColumns().toArray());
+        assertArrayEquals(new String[]{"author.name as name", "*"}, SqlParser.create(" select    author.name    as   name, * from test ;").getColumns().toArray());
+        assertThrows(SqlParserException.class, () -> SqlParser.create(" select  'test string '  ;").getColumns());
+        assertThrows(SqlParserException.class, () -> SqlParser.create(" 'test string ' from  ;").getColumns());
+        assertThrows(SqlParserException.class, () -> SqlParser.create(" select field.name, , * from testtable;").getColumns());
     }
 
 
     @Test
     public void testFrom() {
-        SqlParser parser = SqlParser.create(" SELECT author.name, count(book.id), sum(book.cost), * FRoM author  (  Select  )");
-        parser.getSource();
+        assertArrayEquals(new String[]{"author", "testtable"}, SqlParser.create(" SELECT * FRoM author, testtable ;").getSource().toArray());
+        assertArrayEquals(new String[]{"author", "testtable"}, SqlParser.create(" SELECT * FRoM author   , testtable     LEFT JOIN ...;").getSource().toArray());
+        assertArrayEquals(new String[]{"author", "testtable"}, SqlParser.create(" SELECT * FRoM author   , testtable     GROUp by ...;").getSource().toArray());
+        assertArrayEquals(new String[]{"author", "testtable"}, SqlParser.create(" SELECT * FRoM author   , testtable     WHere ...;").getSource().toArray());
+        assertArrayEquals(new String[]{"author", "testtable"}, SqlParser.create(" SELECT * FRoM author   , testtable     Offset ...;").getSource().toArray());
+        assertArrayEquals(new String[]{"author", "testtable"}, SqlParser.create(" SELECT * FRoM author   , testtable     limit ...;").getSource().toArray());
+        assertArrayEquals(new String[]{"author", "testtable"}, SqlParser.create(" SELECT * FRoM author   , testtable     (select ...) ...;").getSource().toArray());
+        assertThrows(SqlParserException.class, () -> SqlParser.create(" SELEct * from testtable, , test;").getSource().toArray());
     }
 }
