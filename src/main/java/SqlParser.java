@@ -22,21 +22,21 @@ public class SqlParser implements SqlQueryAble {
         this.sqlQuery = sqlQuery;
     }
 
-    private String validSqlItem(String item, Predicate<String> predicate, String errorGuess) {
+    private String validateSqlItem(String item, Predicate<String> predicate, String errorMessage) {
         String column = item.trim();
-        if (predicate.test(column)) throw new SqlParserException("Empty field. " + errorGuess);
+        if (predicate.test(column)) throw new SqlParserException("Empty field. " + errorMessage);
         return column.replaceAll("\\s+", " ");
     }
 
     @Override
     public List<String> getColumns() {
-        String regex = "(?<=select)\\\\s+[A-Za-z0-9.,*\\\\s()_]+?(?=from)";
+        String regex = "(?<=select)\\s+[A-Za-z0-9.,*\\s()_]+?(?=from)";
         Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
         Matcher matcher = pattern.matcher(sqlQuery);
         if (!matcher.find()) throw new SqlParserException("Fields to select are not found");
         String[] columns = matcher.group().split(",");
         return Arrays.stream(columns)
-                .map((item) -> validSqlItem(item, (col-> col.equals("")), "Perhaps cause is : ', ,'"))
+                .map((item) -> validateSqlItem(item, (col -> col.equals("")), "Perhaps cause is : ', ,'"))
                 .collect(Collectors.toList());
     }
 
@@ -49,7 +49,7 @@ public class SqlParser implements SqlQueryAble {
         if (!matcher.find()) return new ArrayList<>();
         String[] sources = matcher.group().split(",");
         return Arrays.stream(sources)
-                .map((item) -> validSqlItem(item, col -> col.equals(""), "Perhaps cause is : ', ,'"))
+                .map((item) -> validateSqlItem(item, col -> col.equals(""), "Perhaps cause is : ', ,'"))
                 .collect(Collectors.toList());
     }
 
@@ -66,14 +66,25 @@ public class SqlParser implements SqlQueryAble {
         String errorMessage = "Perhaps cause is : ' == '";
         String correctJoinRegex = "(?i)[A-Za-z0-9.\\s_]+\\s+on\\s+[A-Za-z0-9.\\s_]+=[A-Za-z0-9.\\s_]+";
         return joins.stream()
-                .map((item) -> validSqlItem(item, join -> !join.matches(correctJoinRegex), errorMessage))
+                .map((item) -> validateSqlItem(item, join -> !join.matches(correctJoinRegex), errorMessage))
                 .collect(Collectors.toList());
     }
 
     @Override
     public List<String> getWhereClauses() {
-        return null;
+        String regex = "(?<=(where))\\s+[A-Za-z0-9=.,*\\s_>'<!]+?(?=(group\\s+by|;|limit|order\\s+by))";
+        Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(sqlQuery);
+        List<String> clauses = new ArrayList<>();
+        if (!matcher.find()) return clauses;
+        String correctClauseReg = "^\\s*[A-Za-z0-9=.,*\\s_']+\\s*(=|!=|=>|<=|<>|>|<|\\s+is\\s+|is\\s+not\\s+)\\s*[A-Za-z0-9=.,*\\s_']+\\s*$";
+        return Arrays.stream(matcher.group().split("(?i)(and|or)"))
+                .map(item -> validateSqlItem(item, (clause) -> !clause.matches(correctClauseReg), "Perhaps cause is near 'where'"))
+                .collect(Collectors.toList());
     }
+
+
+
 
     @Override
     public List<String> getGroupByColumns() {

@@ -60,4 +60,15 @@ public class SqlParserTest {
 
         assertThrows(SqlParserException.class, () -> SqlParser.create(" seleCt * from table full join table3   oN table3.id == table.id order  by ... ; ").getJoins());
     }
+
+    @Test
+    public void testClauses() {
+        assertArrayEquals(new String[] {"r.id = 10"}, SqlParser.create("select * from users left join role r on    users.name =     r.name where r.id     = 10  ;").getWhereClauses().toArray());
+        assertArrayEquals(new String[] {"id => 10"}, SqlParser.create("select * from users where id => 10  group by users.id ;").getWhereClauses().toArray());
+        assertArrayEquals(new String[] {"hello = 'som123'",  "id > 10", "id < 5"}, SqlParser.create("select * from  (select  * from users where id > 10 and id < 15) where hello = 'som123' and id > 10 or id < 5 ;").getWhereClauses().toArray());
+        assertThrows(SqlParserException.class, () -> SqlParser.create("select * from testtable where name =!! 'hello';").getWhereClauses());
+        assertThrows(SqlParserException.class, () -> SqlParser.create("select * from testtable where name isnot null;").getWhereClauses());
+        assertArrayEquals(new String[] {"name is null"}, SqlParser.create(" select * from test where name is null;").getWhereClauses().toArray());
+        assertArrayEquals(new String[] {"name is not null"}, SqlParser.create(" select * from test where name is not   null;").getWhereClauses().toArray());
+    }
 }
