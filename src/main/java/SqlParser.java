@@ -11,7 +11,7 @@ public class SqlParser implements SqlQueryAble {
 
     private final String sqlQuery;
 
-    public static SqlParser create(String sqlQuery) {
+    public static SqlParser parse(String sqlQuery) {
         String trimmedSql = sqlQuery.trim();
         if (!trimmedSql.endsWith(";"))
             throw new SqlParserException("Incorrect end of sql query. ';' is not found ");
@@ -72,23 +72,26 @@ public class SqlParser implements SqlQueryAble {
 
     @Override
     public List<String> getWhereClauses() {
-        String regex = "(?<=(where))\\s+[A-Za-z0-9=.,*\\s_>'<!]+?(?=(group\\s+by|;|limit|order\\s+by))";
+        String regex = "(?<=(where))\\s+[A-Za-z0-9=.,*\\s_>'<!]+?(?=(group\\s+by|;|limit|offset|order\\s+by))";
         Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
         Matcher matcher = pattern.matcher(sqlQuery);
-        List<String> clauses = new ArrayList<>();
-        if (!matcher.find()) return clauses;
+        if (!matcher.find()) return new ArrayList<>();
         String correctClauseReg = "^\\s*[A-Za-z0-9=.,*\\s_']+\\s*(=|!=|=>|<=|<>|>|<|\\s+is\\s+|is\\s+not\\s+)\\s*[A-Za-z0-9=.,*\\s_']+\\s*$";
         return Arrays.stream(matcher.group().split("(?i)(and|or)"))
                 .map(item -> validateSqlItem(item, (clause) -> !clause.matches(correctClauseReg), "Perhaps cause is near 'where'"))
                 .collect(Collectors.toList());
     }
 
-
-
-
     @Override
     public List<String> getGroupByColumns() {
-        return null;
+        String regex = "(?<=group by)\\s+[A-Za-z0-9=.,*\\s_>'<!]+?(?=(order\\s+by|;|limit|offset|having))";
+        Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+        String groupByWithoutSpaceQuery = sqlQuery.replaceAll("group\\s+by", "group by");
+        Matcher matcher = pattern.matcher(groupByWithoutSpaceQuery);
+        if (!matcher.find()) return new ArrayList<>();
+        return Arrays.stream(matcher.group().split(","))
+                .map(item -> validateSqlItem(item, groupBy -> groupBy.equals(""), "Error is near 'group by'"))
+                .collect(Collectors.toList());
     }
 
     @Override
