@@ -96,7 +96,7 @@ public class SqlParserTest {
                 "select * from (  select *    from    users    group   by id order by  id) " +
                 "left join (select * from roles) on role.name = users.name order by users.id, users.name   limit 1;").getSubQueries().toArray()
         );
-        assertArrayEquals(new String[]{"select * from users group by id order by  id"}, SqlParser.parse(
+        assertArrayEquals(new String[]{"select * from users group by id order by id"}, SqlParser.parse(
                 "select * from (select * from users group by id order by  id) order by id, name limit 1;").getSubQueries().toArray()
         );
     }

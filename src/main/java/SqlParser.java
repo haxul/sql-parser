@@ -30,8 +30,7 @@ public class SqlParser implements SqlQueryAble {
     @Override
     public Integer getLimit() {
         String regex = "(?<=limit)\\s+[A-Za-z0-9=.,*\\s_>'<!]+?(?=(;|offset))";
-        Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
-        Matcher matcher = pattern.matcher(sqlQuery);
+        Matcher matcher = Pattern.compile(regex, Pattern.CASE_INSENSITIVE).matcher(sqlQuery);
         if (!matcher.find()) return null;
         String limitValue = validateSqlItem(matcher.group(), limit -> !limit.matches("\\d+"), "Error is near 'limit'");
         return Integer.parseInt(limitValue);
@@ -40,8 +39,7 @@ public class SqlParser implements SqlQueryAble {
     @Override
     public Integer getOffset() {
         String regex = "(?<=offset)\\s+[A-Za-z0-9=.,*\\s_>'<!]+?(?=(;|limit))";
-        Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
-        Matcher matcher = pattern.matcher(sqlQuery);
+        Matcher matcher = Pattern.compile(regex, Pattern.CASE_INSENSITIVE).matcher(sqlQuery);
         if (!matcher.find()) return null;
         String offsetValue = validateSqlItem(matcher.group(), offset -> !offset.matches("\\d+"), "Error is near 'offset'");
         return Integer.parseInt(offsetValue);
@@ -50,8 +48,7 @@ public class SqlParser implements SqlQueryAble {
     @Override
     public List<String> getColumns() {
         String regex = "(?<=select)\\s+[A-Za-z0-9.,*\\s()_]+?(?=from)";
-        Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
-        Matcher matcher = pattern.matcher(sqlQuery);
+        Matcher matcher = Pattern.compile(regex, Pattern.CASE_INSENSITIVE).matcher(sqlQuery);
         if (!matcher.find()) throw new SqlParserException("Fields to select are not found");
         String[] columns = matcher.group().split(",");
         return Arrays.stream(columns)
@@ -63,8 +60,7 @@ public class SqlParser implements SqlQueryAble {
     public List<String> getSource() {
         String regex = "(?<=from)\\s+[A-Za-z0-9.,*\\s()_]+?" +
                 "(?=(LEFT|RIGHT|FULL|JOIN|WHERE|OFFSET|LIMIT|;|GROUP\\s+BY|ORDER\\s+BY|\\(\\s*select.*\\)))";
-        Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
-        Matcher matcher = pattern.matcher(sqlQuery);
+        Matcher matcher = Pattern.compile(regex, Pattern.CASE_INSENSITIVE).matcher(sqlQuery);
         if (!matcher.find()) return new ArrayList<>();
         String[] sources = matcher.group().split(",");
         return Arrays.stream(sources)
@@ -75,8 +71,7 @@ public class SqlParser implements SqlQueryAble {
     @Override
     public List<String> getWhereClauses() {
         String regex = "(?<=(where))\\s+[A-Za-z0-9=.,*\\s_>'<!]+?(?=(group\\s+by|;|limit|offset|order\\s+by))";
-        Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
-        Matcher matcher = pattern.matcher(sqlQuery);
+        Matcher matcher= Pattern.compile(regex, Pattern.CASE_INSENSITIVE).matcher(sqlQuery);
         if (!matcher.find()) return new ArrayList<>();
         String correctClauseReg = "^\\s*[A-Za-z0-9=.,*\\s_']+\\s*(=|!=|=>|<=|<>|>|<|\\s+is\\s+|is\\s+not\\s+)\\s*[A-Za-z0-9=.,*\\s_']+\\s*$";
         return Arrays.stream(matcher.group().split("(?i)(and|or)"))
@@ -125,8 +120,7 @@ public class SqlParser implements SqlQueryAble {
     @Override
     public List<String> getJoins() {
         String regex = "(?<=(join))[A-Za-z0-9.,*\\s_=]+?(?=(right|join|left|full|WHERE|OFFSET|LIMIT|;|GROUP\\s+BY|ORDER\\s+BY))";
-        Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
-        Matcher matcher = pattern.matcher(sqlQuery);
+        Matcher matcher = Pattern.compile(regex, Pattern.CASE_INSENSITIVE).matcher(sqlQuery);
         List<String> joins = new ArrayList<>();
         while (matcher.find()) {
             var found = matcher.group();
