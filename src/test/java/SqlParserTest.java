@@ -89,6 +89,18 @@ public class SqlParserTest {
         assertThrows(SqlParserException.class, () -> SqlParser.parse("select * from (select * from users group by id) order by id, , ;").getSortColumns());
     }
 
+
+    @Test
+    public void testSubqueries() {
+        assertArrayEquals(new String[]{"select * from users group by id order by id", "select * from roles"}, SqlParser.parse(
+                "select * from (  select *    from    users    group   by id order by  id) " +
+                "left join (select * from roles) on role.name = users.name order by users.id, users.name   limit 1;").getSubQueries().toArray()
+        );
+        assertArrayEquals(new String[]{"select * from users group by id order by  id"}, SqlParser.parse(
+                "select * from (select * from users group by id order by  id) order by id, name limit 1;").getSubQueries().toArray()
+        );
+    }
+
     @Test
     public void testLimit() {
         assertEquals(1, SqlParser.parse("select * from (select * from users  order by id, name limit 1 ;").getLimit());
@@ -97,4 +109,15 @@ public class SqlParserTest {
         assertThrows(SqlParserException.class, () -> SqlParser.parse("select * from (select * from users  order by id, name limit 1a;").getLimit());
         assertThrows(SqlParserException.class, () -> SqlParser.parse("select * from (select * from users  order by id, name limit 1.1;").getLimit());
     }
+
+    @Test
+    public void testOffset() {
+        assertEquals(1, SqlParser.parse("select * from (select * from users  order by id, name Offset 1 ;").getOffset());
+        assertThrows(SqlParserException.class, () -> SqlParser.parse("select * from (select * from users  order by id, name offSet 1 where id > 1;").getOffset());
+        assertEquals(1, SqlParser.parse("select * from (select * from users  order by id, name limit 1 offset 1;").getOffset());
+        assertThrows(SqlParserException.class, () -> SqlParser.parse("select * from (select * from users  order by id, name offset 1a;").getOffset());
+        assertThrows(SqlParserException.class, () -> SqlParser.parse("select * from (select * from users  order by id, name offset 1.1;").getOffset());
+    }
+
+
 }

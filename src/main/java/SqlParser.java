@@ -11,21 +11,14 @@ public class SqlParser implements SqlQueryAble {
 
     private final String sqlQuery;
 
-    public static SqlParser parse(String sqlQuery) {
-        String trimmedSql = sqlQuery.trim();
-        if (!trimmedSql.endsWith(";"))
-            throw new SqlParserException("Incorrect end of sql query. ';' is not found ");
-        return new SqlParser(trimmedSql);
-    }
-
     private SqlParser(String sqlQuery) {
         this.sqlQuery = sqlQuery;
     }
 
-    private String validateSqlItem(String item, Predicate<String> predicate, String errorMessage) {
-        String column = item.trim();
-        if (predicate.test(column)) throw new SqlParserException(errorMessage);
-        return column.replaceAll("\\s+", " ");
+    public static SqlParser parse(String sqlQuery) {
+        String trimmedSql = sqlQuery.trim();
+        if (!trimmedSql.endsWith(";")) throw new SqlParserException("';' is not found in the end of query");
+        return new SqlParser(trimmedSql);
     }
 
     @Override
@@ -60,7 +53,7 @@ public class SqlParser implements SqlQueryAble {
         Matcher matcher = pattern.matcher(sqlQuery);
         List<String> joins = new ArrayList<>();
         while (matcher.find()) {
-            String found = matcher.group();
+            var found = matcher.group();
             joins.add(found);
         }
         String errorMessage = "Perhaps cause is : ' == '";
@@ -118,11 +111,32 @@ public class SqlParser implements SqlQueryAble {
 
     @Override
     public Integer getOffset() {
-        return null;
+        String regex = "(?<=offset)\\s+[A-Za-z0-9=.,*\\s_>'<!]+?(?=(;|limit))";
+        Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(sqlQuery);
+        if (!matcher.find()) return null;
+        String offsetValue = validateSqlItem(matcher.group(), offset -> !offset.matches("\\d+"), "Error is near 'offset'");
+        return Integer.parseInt(offsetValue);
     }
 
     @Override
     public List<String> getSubQueries() {
-        return null;
+        String regex = "(?<=\\()\\s*select\\s+[A-Za-z0-9=.,*\\s_>'<!]+(?=\\))";
+        Matcher matcher = Pattern.compile(regex, Pattern.CASE_INSENSITIVE).matcher(sqlQuery);
+        List<String> subqueries = new ArrayList<>();
+        while (matcher.find()) {
+            var subquery = matcher.group();
+            subqueries.add(subquery);
+        }
+        return subqueries.stream()
+                .map(item -> item.trim().replaceAll("\\s+", " "))
+                .collect(Collectors.toList());
     }
+
+    private String validateSqlItem(String item, Predicate<String> predicate, String errorMessage) {
+        var column = item.trim();
+        if (predicate.test(column)) throw new SqlParserException(errorMessage);
+        return column.replaceAll("\\s+", " ");
+    }
+
 }
