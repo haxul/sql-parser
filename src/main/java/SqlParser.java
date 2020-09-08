@@ -24,7 +24,7 @@ public class SqlParser implements SqlQueryAble {
 
     private String validateSqlItem(String item, Predicate<String> predicate, String errorMessage) {
         String column = item.trim();
-        if (predicate.test(column)) throw new SqlParserException("Empty field. " + errorMessage);
+        if (predicate.test(column)) throw new SqlParserException(errorMessage);
         return column.replaceAll("\\s+", " ");
     }
 
@@ -96,16 +96,28 @@ public class SqlParser implements SqlQueryAble {
 
     @Override
     public List<String> getSortColumns() {
-        return null;
+        String regex = "(?<=order by)\\s+[A-Za-z0-9=.,*\\s_>'<!]+?(?=(;|limit|offset))";
+        String orderByWithoutSpaceQuery = sqlQuery.replaceAll("order\\s+by", "order by");
+        Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(orderByWithoutSpaceQuery);
+        if (!matcher.find()) return new ArrayList<>();
+        return Arrays.stream(matcher.group().split(","))
+                .map(item -> validateSqlItem(item, orderBy -> orderBy.equals(""), "Error is near 'order by'"))
+                .collect(Collectors.toList());
     }
 
     @Override
-    public List<Integer> getLimit() {
-        return null;
+    public Integer getLimit() {
+        String regex = "(?<=limit)\\s+[A-Za-z0-9=.,*\\s_>'<!]+?(?=(;|offset))";
+        Pattern pattern = Pattern.compile(regex, Pattern.CASE_INSENSITIVE);
+        Matcher matcher = pattern.matcher(sqlQuery);
+        if (!matcher.find()) return null;
+        String limitValue = validateSqlItem(matcher.group(), limit -> !limit.matches("\\d+"), "Error is near 'limit'");
+        return Integer.parseInt(limitValue);
     }
 
     @Override
-    public List<Integer> getOffset() {
+    public Integer getOffset() {
         return null;
     }
 

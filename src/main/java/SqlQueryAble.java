@@ -7,7 +7,7 @@ public interface SqlQueryAble {
     List<String> getWhereClauses();
     List<String> getGroupByColumns();
     List<String> getSortColumns();
-    List<Integer> getLimit();
-    List<Integer> getOffset();
+    Integer getLimit();
+    Integer getOffset();
     List<String> getSubQueries();
 }

@@ -31,28 +31,28 @@ public class SqlParserTest {
     @Test
     public void testJoins() {
         assertArrayEquals(
-                new String[]{"table2 on table2.id = table.id", "table3 on table3.id = table.id" },
+                new String[]{"table2 on table2.id = table.id", "table3 on table3.id = table.id"},
                 SqlParser.parse(" seleCt * from table " +
                         "left join table2 on table2.id   = table.id " +
                         "full join table3   on table3.id =    table.id ; ").getJoins().toArray()
         );
 
         assertArrayEquals(
-                new String[]{"table2 on table2.id = table.id", "table3 on table3.id = table.id" },
+                new String[]{"table2 on table2.id = table.id", "table3 on table3.id = table.id"},
                 SqlParser.parse(" seleCt * from table " +
                         "left join table2 on table2.id   = table.id " +
                         "full join table3   on table3.id =    table.id WHERE ... ; ").getJoins().toArray()
         );
 
         assertArrayEquals(
-                new String[]{"table2 on table2.id = table.id", "table3 on table3.id = table.id" },
+                new String[]{"table2 on table2.id = table.id", "table3 on table3.id = table.id"},
                 SqlParser.parse(" seleCt * from table " +
                         "left join table2 on table2.id   = table.id " +
                         "full join table3   on table3.id =    table.id offset ... ; ").getJoins().toArray()
         );
 
         assertArrayEquals(
-                new String[]{"table2 on table2.id = table.id", "table3 on table3.id = table.id" },
+                new String[]{"table2 on table2.id = table.id", "table3 on table3.id = table.id"},
                 SqlParser.parse(" seleCt * from table " +
                         "left join table2 on table2.id   = table.id " +
                         "full join table3   on table3.id =    table.id order  by ... ; ").getJoins().toArray()
@@ -63,21 +63,38 @@ public class SqlParserTest {
 
     @Test
     public void testClauses() {
-        assertArrayEquals(new String[] {"r.id = 10"}, SqlParser.parse("select * from users left join role r on    users.name =     r.name where r.id     = 10  ;").getWhereClauses().toArray());
-        assertArrayEquals(new String[] {"id => 10"}, SqlParser.parse("select * from users where id => 10  group by users.id ;").getWhereClauses().toArray());
-        assertArrayEquals(new String[] {"hello = 'som123'",  "id > 10", "id < 5"}, SqlParser.parse("select * from  (select  * from users where id > 10 and id < 15) where hello = 'som123' aNd id > 10 or id < 5 ;").getWhereClauses().toArray());
+        assertArrayEquals(new String[]{"r.id = 10"}, SqlParser.parse("select * from users left join role r on    users.name =     r.name where r.id     = 10  ;").getWhereClauses().toArray());
+        assertArrayEquals(new String[]{"id => 10"}, SqlParser.parse("select * from users where id => 10  group by users.id ;").getWhereClauses().toArray());
+        assertArrayEquals(new String[]{"hello = 'som123'", "id > 10", "id < 5"}, SqlParser.parse("select * from  (select  * from users where id > 10 and id < 15) where hello = 'som123' aNd id > 10 or id < 5 ;").getWhereClauses().toArray());
         assertThrows(SqlParserException.class, () -> SqlParser.parse("select * from testtable where name =!! 'hello';").getWhereClauses());
         assertThrows(SqlParserException.class, () -> SqlParser.parse("select * from testtable where name isnot null;").getWhereClauses());
-        assertArrayEquals(new String[] {"name is null"}, SqlParser.parse(" select * from test where name is null;").getWhereClauses().toArray());
-        assertArrayEquals(new String[] {"name is not null"}, SqlParser.parse(" select * from test where name is not   null;").getWhereClauses().toArray());
+        assertArrayEquals(new String[]{"name is null"}, SqlParser.parse(" select * from test where name is null;").getWhereClauses().toArray());
+        assertArrayEquals(new String[]{"name is not null"}, SqlParser.parse(" select * from test where name is not   null;").getWhereClauses().toArray());
     }
 
 
     @Test
     public void testGroupBy() {
-        assertArrayEquals(new String[] {"users.id", "users.name"} , SqlParser.parse("select * from users left join  role on role.name = users.name group by    users.id, users.name   limit 1;").getGroupByColumns().toArray());
-        assertArrayEquals(new String[] {"id"} , SqlParser.parse("select * from (select * from users group by id) group by id;").getGroupByColumns().toArray());
-        assertArrayEquals(new String[] {"id"} , SqlParser.parse("select * from (select * from users group by id) group by id having;").getGroupByColumns().toArray());
-        assertThrows(SqlParserException.class , () -> SqlParser.parse("select * from (select * from users group by id) group by id, , ;").getGroupByColumns());
+        assertArrayEquals(new String[]{"users.id", "users.name"}, SqlParser.parse("select * from users left join  role on role.name = users.name group by    users.id, users.name   limit 1;").getGroupByColumns().toArray());
+        assertArrayEquals(new String[]{"id"}, SqlParser.parse("select * from (select * from users group   by id) group by id;").getGroupByColumns().toArray());
+        assertArrayEquals(new String[]{"id"}, SqlParser.parse("select * from (select * from users group    by id) group by id having;").getGroupByColumns().toArray());
+        assertThrows(SqlParserException.class, () -> SqlParser.parse("select * from (select * from users group by id) group by id, , ;").getGroupByColumns());
+    }
+
+    @Test
+    public void testOrderBy() {
+        assertArrayEquals(new String[]{"users.id", "users.name"}, SqlParser.parse("select * from users left join  role on role.name = users.name order by    users.id, users.name   limit 1;").getSortColumns().toArray());
+        assertArrayEquals(new String[]{"id"}, SqlParser.parse("select * from (select * from users group   by id) order by id;").getSortColumns().toArray());
+        assertArrayEquals(new String[]{"id"}, SqlParser.parse("select * from (select * from users group    by id) order   by id limit;").getSortColumns().toArray());
+        assertThrows(SqlParserException.class, () -> SqlParser.parse("select * from (select * from users group by id) order by id, , ;").getSortColumns());
+    }
+
+    @Test
+    public void testLimit() {
+        assertEquals(1, SqlParser.parse("select * from (select * from users  order by id, name limit 1 ;").getLimit());
+        assertThrows(SqlParserException.class, () -> SqlParser.parse("select * from (select * from users  order by id, name limit 1 where id > 1;").getLimit());
+        assertEquals(1, SqlParser.parse("select * from (select * from users  order by id, name limit 1 offset 1;").getLimit());
+        assertThrows(SqlParserException.class, () -> SqlParser.parse("select * from (select * from users  order by id, name limit 1a;").getLimit());
+        assertThrows(SqlParserException.class, () -> SqlParser.parse("select * from (select * from users  order by id, name limit 1.1;").getLimit());
     }
 }
