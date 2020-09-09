@@ -17,7 +17,7 @@ public class SqlParser implements SqlQueryAble {
 
     public static SqlParser parse(String sqlQuery) {
         String trimmedSql = sqlQuery.trim();
-        if (!trimmedSql.toLowerCase().startsWith("select")) throw new SqlParserException("'select' is not found"); // replace by regexp
+        if (!trimmedSql.match("(?i)^\\s*select")) throw new SqlParserException("'select' is not found"); 
         if (!trimmedSql.endsWith(";")) throw new SqlParserException("';' is not found in the end of query");
         return new SqlParser(trimmedSql);
     }
