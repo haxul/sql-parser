@@ -51,7 +51,7 @@ public class SqlSelectParser implements SqlQueryAble {
         String regex = "(?<=(join))[A-Za-z0-9.(),*\\s_=]+?(?=(right|join|left|full|WHERE|OFFSET|LIMIT|;|GROUP\\s+BY|ORDER\\s+BY))";
         Matcher matcher = Pattern.compile(regex, Pattern.CASE_INSENSITIVE).matcher(sqlQuery);
         List<String> joins = getMatchedList(matcher, new ArrayList<>());
-        String errorMessage = "Perhaps cause is : ' == '";
+        String errorMessage = "Perhaps cause is : ' join '";
         String correctJoinRegex = "(?i)[A-Za-z0-9.()\\s_]+\\s+on\\s+[A-Za-z0-9.\\s_()]+=[A-Za-z0-9.()\\s_]+";
         return joins.stream()
                 .map((item) -> validateSqlItem(item, join -> !join.matches(correctJoinRegex), errorMessage))
